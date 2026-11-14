@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ne"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg"><meta name="apple-mobile-web-app-capable" content="yes"><title>DocScan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--tx:#0f172a;--mu:#64748b;--ac:#4f46e5;--g:linear-gradient(135deg,#6366f1,#06b6d4);--bd:#e2e8f0}
+@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--tx:#f1f5f9;--mu:#94a3b8;--bd:#334155}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,-apple-system,"Noto Sans Devanagari",sans-serif;background:var(--bg);color:var(--tx);padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+header{background:var(--g);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 20px 28px;border-radius:0 0 28px 28px}
+header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.85;font-size:13px}
+main{padding:16px;max-width:640px;margin:-14px auto 0}
+.card{background:var(--card);border-radius:20px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.08);margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:600;cursor:pointer;flex:1;min-width:120px;background:var(--bg);color:var(--tx)}
+.btn.p{background:var(--g);color:#fff}.btn.wa{background:#25d366;color:#fff}.btn.d{color:#e11d48}
+.btn:disabled{opacity:.4}
+.chips{display:flex;gap:8px;margin-bottom:12px}
+.chip{padding:8px 14px;border-radius:99px;border:1px solid var(--bd);font-size:13px;cursor:pointer;background:transparent;color:var(--tx)}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.pg{position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:#000}
+.pg img{width:100%;height:100%;object-fit:cover}
+.pg b{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.6);color:#fff;border-radius:8px;padding:1px 7px;font-size:12px}
+.pg .remove{position:absolute;right:4px;top:4px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-size:14px;padding:0;cursor:pointer}
+.empty{text-align:center;color:var(--mu);padding:30px 10px}.empty .big{font-size:48px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+nav button{flex:1;border:0;background:none;color:var(--mu);font-size:12px;padding:6px;cursor:pointer}
+nav button span{display:block;font-size:22px}nav button.on{color:var(--ac);font-weight:700}
+.doc{display:flex;gap:12px;align-items:center}.doc img{width:56px;height:74px;object-fit:cover;border-radius:8px;background:#ddd}
+.doc div{flex:1;min-width:0}.doc h3{margin:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.doc small{color:var(--mu)}
+.ib{border:0;background:var(--bg);color:var(--tx);border-radius:12px;width:40px;height:40px;font-size:18px;cursor:pointer}
+#cam{position:fixed;inset:0;background:#000;z-index:9;display:none;flex-direction:column}
+#cam video{flex:1;min-height:0;width:100%;object-fit:cover}
+.cb{display:flex;justify-content:space-around;align-items:center;padding:20px 0 calc(24px + env(safe-area-inset-bottom));background:#000}
+.shut{width:74px;height:74px;border-radius:50%;border:5px solid #fff;background:var(--g);color:#fff;font-size:26px;cursor:pointer}
+.cb button.t{background:none;border:0;color:#fff;font-size:15px;width:80px}
+#toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:20}
+#toast.s{opacity:1}
+.hide{display:none!important}
+</style></head><body>
+<header><h1><i class="fas fa-file-alt" aria-hidden="true"></i> DocScan</h1><p>स्क्यान गर्नुहोस् • PDF बनाउनुहोस् • सजिलै share गर्नुहोस्</p></header>
+<main>
+<section id="v-scan">
+ <div class="card">
+  <div class="chips" id="chips"><button class="chip on" data-f="none"><i class="fas fa-palette" aria-hidden="true"></i> रंगीन</button><button class="chip" data-f="gray"><i class="fas fa-adjust" aria-hidden="true"></i> Gray</button><button class="chip" data-f="bw"><i class="fas fa-file-alt" aria-hidden="true"></i> B&amp;W</button></div>
+  <div class="row"><button class="btn p" id="bCam"><i class="fas fa-camera" aria-hidden="true"></i> क्यामेरा</button><button class="btn" id="bGal"><i class="fas fa-images" aria-hidden="true"></i> ग्यालरी</button></div>
+  <input type="file" id="file" accept="image/*" multiple hidden>
+  <div id="grid" class="grid"></div>
+  <div id="emp" class="empty"><div class="big"><i class="fas fa-folder-open" aria-hidden="true"></i></div>कुनै पेज छैन।<br>क्यामेरा वा ग्यालरीबाट थप्नुहोस्।</div>
+  <div class="row"><button class="btn p" id="bPdf" disabled><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF बनाएर save गर्नुहोस्</button><button class="btn d" id="bClr" disabled><i class="fas fa-trash-alt" aria-hidden="true"></i> खाली</button></div>
+ </div>
+</section>
+<section id="v-lib" class="hide"><div id="list"></div></section>
+</main>
+<nav><button id="n1" class="on"><span><i class="fas fa-camera" aria-hidden="true"></i></span>स्क्यान</button><button id="n2"><span><i class="fas fa-book" aria-hidden="true"></i></span>लाइब्रेरी</button></nav>
+<div id="cam"><video id="vid" playsinline autoplay muted></video>
+ <div class="cb"><button class="t" id="cDone"><i class="fas fa-check" aria-hidden="true"></i> भयो (<span id="cN">0</span>)</button><button class="shut" id="cShot" aria-label="capture"><i class="fas fa-camera" aria-hidden="true"></i></button><button class="t" id="cClose"><i class="fas fa-times" aria-hidden="true"></i> बन्द</button></div></div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+let pages=[],filter='none',stream=null,db;
+const toast=m=>{const t=$('#toast');t.textContent=m;t.className='s';setTimeout(()=>t.className='',2200)};
+// ---------- IndexedDB ----------
+const open=indexedDB.open('docscan',1);
+open.onupgradeneeded=e=>e.target.result.createObjectStore('docs',{keyPath:'id'});
+const dbp=new Promise(r=>open.onsuccess=e=>{db=e.target.result;r()});
+const tx=(m,f)=>new Promise(r=>{const q=f(db.transaction('docs',m).objectStore('docs'));q.onsuccess=()=>r(q.result)});
+// ---------- Scan ----------
+$('#chips').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;filter=c.dataset.f;document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c))};
+function render(){
+ $('#grid').innerHTML=pages.map((p,i)=>`<div class="pg"><img src="${p}"><b>${i+1}</b><button class="remove" data-i="${i}" aria-label="Remove page"><i class="fas fa-times" aria-hidden="true"></i></button></div>`).join('');
+ $('#emp').classList.toggle('hide',pages.length>0);
+ $('#bPdf').disabled=$('#bClr').disabled=!pages.length;$('#cN').textContent=pages.length}
+$('#grid').onclick=e=>{const b=e.target.closest('[data-i]');if(b){pages.splice(b.dataset.i,1);render()}};
+function proc(src,w,h){
+ const m=1600,s=Math.min(1,m/Math.max(w,h)),c=document.createElement('canvas');c.width=w*s;c.height=h*s;
+ const x=c.getContext('2d');
+ x.filter=filter==='gray'?'grayscale(1) contrast(1.15)':filter==='bw'?'grayscale(1) contrast(2.2) brightness(1.15)':'none';
+ x.drawImage(src,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85)}
+$('#bGal').onclick=()=>$('#file').click();
+$('#file').onchange=async e=>{
+ for(const f of e.target.files){const im=await createImageBitmap(f);pages.push(proc(im,im.width,im.height))}
+ e.target.value='';render()};
+$('#bClr').onclick=()=>{if(confirm('सबै पेज हटाउने?')){pages=[];render()}};
+// camera
+$('#bCam').onclick=async()=>{
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false});
+  $('#vid').srcObject=stream;$('#cam').style.display='flex'}
+ catch(err){toast('क्यामेरा खुलेन – ग्यालरी प्रयोग गर्नुहोस्');$('#file').setAttribute('capture','environment');$('#file').click()}};
+const stopCam=()=>{stream&&stream.getTracks().forEach(t=>t.stop());$('#cam').style.display='none'};
+$('#cClose').onclick=$('#cDone').onclick=stopCam;
+$('#cShot').onclick=()=>{const v=$('#vid');pages.push(proc(v,v.videoWidth,v.videoHeight));render();navigator.vibrate&&navigator.vibrate(30)};
+// ---------- PDF ----------
+async function jpg(d){const b=await (await fetch(d)).blob(),im=await createImageBitmap(b);return{bytes:new Uint8Array(await b.arrayBuffer()),w:im.width,h:im.height}}
+function buildPDF(im){
+ const enc=new TextEncoder(),parts=[],off=[];let len=0;
+ const add=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);len+=b.length};
+ const n=im.length,kids=im.map((_,i)=>`${3+i*3} 0 R`).join(' ');
+ add('%PDF-1.4\n');off[1]=len;add('1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n');
+ off[2]=len;add(`2 0 obj<</Type/Pages/Kids[${kids}]/Count ${n}>>endobj\n`);
+ im.forEach((m,i)=>{const p=3+i*3,c=p+1,g=p+2,s=Math.min(555/m.w,802/m.h),dw=(m.w*s).toFixed(2),dh=(m.h*s).toFixed(2),x=((595-dw)/2).toFixed(2),y=((842-dh)/2).toFixed(2);
+  off[p]=len;add(`${p} 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents ${c} 0 R/Resources<</XObject<</Im0 ${g} 0 R>>>>>>endobj\n`);
+  const cs=`q ${dw} 0 0 ${dh} ${x} ${y} cm /Im0 Do Q`;
+  off[c]=len;add(`${c} 0 obj<</Length ${cs.length}>>stream\n${cs}\nendstream endobj\n`);
+  off[g]=len;add(`${g} 0 obj<</Type/XObject/Subtype/Image/Width ${m.w}/Height ${m.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${m.bytes.length}>>stream\n`);add(m.bytes);add('\nendstream endobj\n')});
+ const total=3+n*3,xr=len;let t=`xref\n0 ${total}\n0000000000 65535 f \n`;
+ for(let i=1;i<total;i++)t+=String(off[i]).padStart(10,'0')+' 00000 n \n';
+ add(t+`trailer<</Size ${total}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`);
+ return new Blob(parts,{type:'application/pdf'})}
+$('#bPdf').onclick=async()=>{
+ const d=new Date(),def='Scan_'+d.toISOString().slice(0,16).replace(/[-:T]/g,'');
+ const name=(prompt('फाइलको नाम',def)||def).trim();
+ const pdf=buildPDF(await Promise.all(pages.map(jpg)));
+ await tx('readwrite',s=>s.put({id:Date.now(),name,date:d.toLocaleString(),n:pages.length,thumb:pages[0],pdf}));
+ pages=[];render();toast('Save भयो');show('lib')};
+// ---------- Library ----------
+async function lib(){
+ const all=(await tx('readonly',s=>s.getAll())).sort((a,b)=>b.id-a.id);
+ $('#list').innerHTML=all.length?all.map(d=>`<div class="card doc" data-id="${d.id}"><img src="${d.thumb}"><div><h3>${d.name}.pdf</h3><small>${d.n} पेज • ${(d.pdf.size/1024).toFixed(0)} KB<br>${d.date}</small></div>
+ <button class="ib" data-a="share" title="Share" aria-label="Share"><i class="fas fa-share-alt" aria-hidden="true"></i></button><button class="ib" data-a="dl" title="Download" aria-label="Download"><i class="fas fa-download" aria-hidden="true"></i></button><button class="ib" data-a="del" title="Delete" aria-label="Delete"><i class="fas fa-trash-alt" aria-hidden="true"></i></button></div>`).join(''):'<div class="card empty"><div class="big"><i class="fas fa-inbox" aria-hidden="true"></i></div>कुनै PDF save गरिएको छैन।</div>'}
+$('#list').onclick=async e=>{
+ const a=e.target.dataset.a,c=e.target.closest('.doc');if(!a)return;
+ const d=await tx('readonly',s=>s.get(+c.dataset.id)),file=new File([d.pdf],d.name+'.pdf',{type:'application/pdf'});
+ if(a==='del'){if(confirm('Delete गर्ने?')){await tx('readwrite',s=>s.delete(d.id));lib()}}
+ else if(a==='dl')dl(file);
+ else if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:d.name,text:d.name+'.pdf'})}catch(_){}}
+ else{dl(file);toast('यो browser ले सिधै share गर्दैन – फाइल download भयो, WhatsApp/Email मा attach गर्नुहोस्')}};
+function dl(f){const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
+// ---------- Nav / PWA ----------
+function show(v){$('#v-scan').classList.toggle('hide',v!=='scan');$('#v-lib').classList.toggle('hide',v!=='lib');
+ $('#n1').classList.toggle('on',v==='scan');$('#n2').classList.toggle('on',v==='lib');if(v==='lib')lib()}
+$('#n1').onclick=()=>show('scan');$('#n2').onclick=()=>show('lib');
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+render();
+</script></body></html>
