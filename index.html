@@ -9,15 +9,15 @@
 @media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--tx:#f1f5f9;--mu:#94a3b8;--bd:#334155}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:system-ui,-apple-system,"Noto Sans Devanagari",sans-serif;background:var(--bg);color:var(--tx);padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-header{background:var(--g);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 20px 28px;border-radius:0 0 28px 28px}
-header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.85;font-size:13px}
-main{padding:16px;max-width:640px;margin:-14px auto 0}
+header{background:var(--g);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 20px 28px;border-radius:0 0 18px 18px}
+header h1{margin:0;font-size:22px}header p{margin:12px 0 0;opacity:.85;font-size:16px}
+main{padding:16px;max-width:640px;margin:auto 0}
 .card{background:var(--card);border-radius:20px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.08);margin-bottom:14px}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .btn{border:0;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:600;cursor:pointer;flex:1;min-width:120px;background:var(--bg);color:var(--tx)}
 .btn.p{background:var(--g);color:#fff}.btn.wa{background:#25d366;color:#fff}.btn.d{color:#e11d48}
 .btn:disabled{opacity:.4}
-.chips{display:flex;gap:8px;margin-bottom:12px}
+.chips{display:flex;gap:8px;margin-bottom:36px}
 .chip{padding:8px 14px;border-radius:99px;border:1px solid var(--bd);font-size:13px;cursor:pointer;background:transparent;color:var(--tx)}
 .chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
@@ -39,9 +39,16 @@ nav button span{display:block;font-size:22px}nav button.on{color:var(--ac);font-
 .cb button.t{background:none;border:0;color:#fff;font-size:15px;width:80px}
 #toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:20}
 #toast.s{opacity:1}
+dialog{width:min(420px,calc(100% - 32px));border:0;border-radius:20px;padding:22px;background:var(--card);color:var(--tx);box-shadow:0 12px 40px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(15,23,42,.55)}
+dialog h2{margin:0 0 18px;font-size:19px}
+dialog label{display:block;margin-bottom:8px;font-size:14px;font-weight:600}
+dialog input{width:100%;border:1px solid var(--bd);border-radius:12px;padding:13px;font:inherit;background:var(--bg);color:var(--tx);margin-bottom:18px}
+dialog input:focus{outline:2px solid var(--ac);outline-offset:1px}
+dialog .row button{min-width:0}
 .hide{display:none!important}
 </style></head><body>
-<header><h1><i class="fas fa-file-alt" aria-hidden="true"></i> DocScan</h1><p>स्क्यान गर्नुहोस् • PDF बनाउनुहोस् • सजिलै share गर्नुहोस्</p></header>
+<header><h1><i class="fas fa-file-alt" aria-hidden="true"></i> DocScan</h1><p>स्क्यान गर्नुहोस् • PDF बनाउनुहोस् • Share गर्नुहोस्</p></header>
 <main>
 <section id="v-scan">
  <div class="card">
@@ -58,11 +65,33 @@ nav button span{display:block;font-size:22px}nav button.on{color:var(--ac);font-
 <nav><button id="n1" class="on"><span><i class="fas fa-camera" aria-hidden="true"></i></span>स्क्यान</button><button id="n2"><span><i class="fas fa-book" aria-hidden="true"></i></span>लाइब्रेरी</button></nav>
 <div id="cam"><video id="vid" playsinline autoplay muted></video>
  <div class="cb"><button class="t" id="cDone"><i class="fas fa-check" aria-hidden="true"></i> भयो (<span id="cN">0</span>)</button><button class="shut" id="cShot" aria-label="capture"><i class="fas fa-camera" aria-hidden="true"></i></button><button class="t" id="cClose"><i class="fas fa-times" aria-hidden="true"></i> बन्द</button></div></div>
+<dialog id="fileNameDialog" aria-labelledby="fileNameTitle">
+ <form id="fileNameForm">
+  <h2 id="fileNameTitle">PDF save गर्नुहोस्</h2>
+  <label for="fileName">फाइलको नाम</label>
+  <input id="fileName" name="fileName" type="text" maxlength="100" autocomplete="off" required>
+  <div class="row"><button class="btn" type="button" id="cancelFileName">रद्द गर्नुहोस्</button><button class="btn p" type="submit">Save</button></div>
+ </form>
+</dialog>
 <div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s);
 let pages=[],filter='none',stream=null,db,docsById=new Map();
 const toast=m=>{const t=$('#toast');t.textContent=m;t.className='s';setTimeout(()=>t.className='',3500)};
+function askFileName(defaultName){
+ const dialog=$('#fileNameDialog'),form=$('#fileNameForm'),input=$('#fileName');
+ input.value=defaultName;
+ return new Promise(resolve=>{
+  const onSubmit=e=>{e.preventDefault();dialog.close('save')};
+  const onClose=()=>{
+   form.removeEventListener('submit',onSubmit);dialog.removeEventListener('close',onClose);
+   resolve(dialog.returnValue==='save'?(input.value.trim()||defaultName):null)
+  };
+  form.addEventListener('submit',onSubmit);dialog.addEventListener('close',onClose);
+  dialog.showModal();input.focus();input.select()
+ })
+}
+$('#cancelFileName').onclick=()=>$('#fileNameDialog').close('cancel');
 // ---------- IndexedDB ----------
 const open=indexedDB.open('docscan',1);
 open.onupgradeneeded=e=>e.target.result.createObjectStore('docs',{keyPath:'id'});
@@ -138,7 +167,8 @@ $('#bPdf').onclick=async()=>{
  try{
   await dbp;
   const d=new Date(),def='Scan_'+d.toISOString().slice(0,16).replace(/[-:T]/g,'');
-  const name=(prompt('फाइलको नाम',def)||def).trim()||def;
+  const name=await askFileName(def);
+  if(name===null)return;
   const pdf=buildPDF(await Promise.all(pages.map(jpg)));
   await tx('readwrite',s=>s.put({id:Date.now(),name,date:d.toLocaleString(),n:pages.length,thumb:pages[0],pdf}));
   pages=[];render();toast('PDF save भयो');show('lib')
@@ -146,11 +176,12 @@ $('#bPdf').onclick=async()=>{
  finally{$('#bPdf').disabled=!pages.length}
 };
 // ---------- Library ----------
+const escapeHTML=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function lib(){
  await dbp;
  const all=(await tx('readonly',s=>s.getAll())).sort((a,b)=>b.id-a.id);
  docsById=new Map(all.map(d=>[String(d.id),d]));
- $('#list').innerHTML=all.length?all.map(d=>`<div class="card doc" data-id="${d.id}"><img src="${d.thumb}"><div><h3>${d.name}.pdf</h3><small>${d.n} पेज • ${(d.pdf.size/1024).toFixed(0)} KB<br>${d.date}</small></div>
+ $('#list').innerHTML=all.length?all.map(d=>`<div class="card doc" data-id="${d.id}"><img src="${d.thumb}"><div><h3>${escapeHTML(d.name)}.pdf</h3><small>${d.n} पेज • ${(d.pdf.size/1024).toFixed(0)} KB<br>${d.date}</small></div>
  <button class="ib" data-a="share" title="Share" aria-label="Share"><i class="fas fa-share-alt" aria-hidden="true"></i></button><button class="ib" data-a="dl" title="Download" aria-label="Download"><i class="fas fa-download" aria-hidden="true"></i></button><button class="ib" data-a="del" title="Delete" aria-label="Delete"><i class="fas fa-trash-alt" aria-hidden="true"></i></button></div>`).join(''):'<div class="card empty"><div class="big"><i class="fas fa-inbox" aria-hidden="true"></i></div>कुनै PDF save गरिएको छैन।</div>'}
 $('#list').onclick=async e=>{
  const b=e.target.closest('button[data-a]'),c=e.target.closest('.doc');if(!b||!c)return;
